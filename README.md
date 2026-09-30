@@ -2,13 +2,13 @@
 
 A voice AI agent ("Ava") that answers inbound calls from customers checking on an insurance claim. It verifies the caller, reads back claim status, answers FAQs, handles escalation and emergencies, and writes a post-call record to an external system.
 
-Built for the Observe.AI AI Agent Engineer take-home assessment.
+Built for the Observe.AI AI Agent Engineer take-home assessment. I'm looking forward to discussing a working demo in the interview.
 
 ## Links
 
 | Resource | Access |
 |---|---|
-| Google Sheet (Customers, Claims, CallLogs) | https://docs.google.com/spreadsheets/d/1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98/edit (shared with reviewers, view only) |
+| Google Sheet (Customers, Claims, CallLogs) | https://docs.google.com/spreadsheets/d/1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98/edit?usp=sharing (view only) |
 | n8n workflows (3, published) | Shown live in the interview. Exports are in `n8n/`. |
 | Vapi assistant "Ava - Observe Claims" | Shown live in the interview. Configuration is in `agent/vapi_config.md` and the prompt in `agent/system_prompt.md`. |
 
