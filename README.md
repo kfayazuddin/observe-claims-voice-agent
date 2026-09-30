@@ -55,7 +55,7 @@ FAQ questions (hours, address, new claim, claims process) go to `faq_lookup` at 
 | `verify_and_get_claim` | Function → n8n `/verify-claim` | `{verified:false}`, or `{verified:true, full_name, has_claim, claim_id, claim_type, status, last_updated, docs_required, docs_needed_description, adjuster_note}` |
 | `faq_lookup` | Query tool over `data/faq.md` | FAQ passages |
 | `end_call` | End call | – |
-| `transfer_to_representative` | Transfer / function | See "Known limitations" |
+| `transfer_to_representative` | Vapi Transfer Call tool (primary) | Live transfer to a human representative; see "Escalation" |
 
 **State.** The conversation itself holds the state (confirmed phone, verified yes/no, attempt counts). The security boundary is in the backend: `lookup_customer` never returns claim data, and `verify_and_get_claim` returns it only when the ZIP matches. A wrong ZIP and an unknown phone return the same `{verified:false}`, so the endpoint cannot be used to find out which numbers are customers.
 
@@ -95,6 +95,13 @@ FAQ questions (hours, address, new claim, claims process) go to `faq_lookup` at 
 | Unsupported question (coverage, legal, payout) | Declines to guess and offers a representative | varies |
 | Representative request | Acknowledges without arguing and escalates | escalated |
 
+## Escalation
+
+Two approaches are designed for a representative request:
+
+1. **Primary: Vapi Transfer Call tool (`transfer_to_representative`).** The agent says it is connecting the caller, then the call is transferred to a human number. This is the production-shaped behavior (in production: a warm transfer over SIP/Twilio to the claims queue).
+2. **Fallback: webhook handoff.** [n8n/workflow_escalate.json](n8n/workflow_escalate.json) is a webhook the agent can call instead. It returns `handoff_requested`, and the agent tells the caller that a representative will call back shortly; the call is logged with outcome `escalated`. This works in any test call, including browser calls. It is provided but not wired into the assistant by default.
+
 ## Test data (all fictional)
 
 | Phone | Name | ZIP | Claim |
@@ -117,7 +124,7 @@ n8n/     workflow_lookup_verify.json, workflow_end_of_call.json, workflow_escala
 
 ## Known limitations
 
-- **Representative handoff.** A live phone transfer needs a real call leg plus a Vapi or Twilio number with outbound calling enabled; it does not work from a browser test call on a trial account. `n8n/workflow_escalate.json` is a mock handoff webhook (the agent calls it, then promises a callback). In production this would be a warm transfer over SIP/Twilio or a callback ticket in a CRM.
+- **Representative handoff.** The primary path is Vapi's Transfer Call tool. A live phone transfer needs a real call leg plus a Vapi or Twilio number with outbound calling enabled, so it cannot be exercised from a browser test call on a trial account. See "Escalation" for the fallback.
 - **Webhooks are not authenticated yet.** Production would add a shared-secret header that n8n checks.
 - **Attempt limits** (two ZIP tries, two number tries) are enforced by the prompt, not by server-side counters.
 - **Speech recognition on digit strings** is imperfect; chunked collection and read-back confirmation reduce the errors.

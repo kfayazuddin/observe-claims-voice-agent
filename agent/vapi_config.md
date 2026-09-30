@@ -24,7 +24,7 @@ These settings are stored in the Vapi dashboard and are recorded here so the bui
 | `verify_and_get_claim` | Function | POST `https://worksp.app.n8n.cloud/webhook/verify-claim` |
 | `faq_lookup` | Query (knowledge base) | Vapi file upload of `data/faq.md` |
 | `end_call` | End call | Built-in |
-| `transfer_to_representative` | Transfer call / Function | Live transfer needs a phone-call leg; see README "Known limitations" and `n8n/workflow_escalate.json` for the mock |
+| `transfer_to_representative` | Transfer Call (primary) | Transfers to a human number. A live transfer needs a phone-call leg, so it does not work from browser test calls. Fallback: a Function tool pointing at `n8n/workflow_escalate.json` (see README "Escalation") |
 
 ### lookup_customer
 
