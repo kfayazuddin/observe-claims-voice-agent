@@ -1,0 +1,68 @@
+{
+  "name": "Observe - End Of Call Record",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "end-of-call",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "c0",
+      "name": "Webhook End Of Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "33333333-3333-4333-8333-333333333333"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst body = item.body || item;\nconst m = body.message || {};\n// Vapi posts many event types to the same URL; we only log the final report.\nif (m.type !== 'end-of-call-report') { return []; }\nconst a = m.analysis || {};\nconst call = m.call || {};\n// Fields can arrive as classic structuredData or as Vapi Structured Outputs\nconst f = Object.assign({}, a.structuredData || {});\nconst so = (m.artifact && m.artifact.structuredOutputs) || {};\nfor (const o of Object.values(so)) {\n  if (!o) continue;\n  const r = o.result;\n  if (r && typeof r === 'object' && !Array.isArray(r)) { Object.assign(f, r); }\n  else if (o.name) { f[o.name] = r; }\n}\nreturn [{ json: {\n  timestamp: m.startedAt || call.startedAt || new Date().toISOString(),\n  caller_name: f.caller_name || 'Unknown',\n  phone: f.phone || (m.customer && m.customer.number) || 'Unknown',\n  summary: f.summary || a.summary || m.summary || 'No summary available',\n  sentiment: f.sentiment || 'neutral',\n  outcome: f.outcome || 'info_only'\n} }];"
+      },
+      "id": "c1",
+      "name": "Extract Call Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "CallLogs",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "caller_name": "={{ $json.caller_name }}",
+            "phone": "={{ $json.phone }}",
+            "summary": "={{ $json.summary }}",
+            "sentiment": "={{ $json.sentiment }}",
+            "outcome": "={{ $json.outcome }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "c2",
+      "name": "Append to CallLogs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Webhook End Of Call": { "main": [[{ "node": "Extract Call Record", "type": "main", "index": 0 }]] },
+    "Extract Call Record": { "main": [[{ "node": "Append to CallLogs", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

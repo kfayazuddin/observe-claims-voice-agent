@@ -1,0 +1,6 @@
+claim_id,phone,claim_type,status,last_updated,docs_required,docs_needed_description,adjuster_note
+CLM-1001,+15550100001,Auto collision,In Review,2026-09-25,No,,An adjuster is reviewing your claim. Expect an update within 3 to 5 business days.
+CLM-1002,+15550100002,Water damage,Documents Required,2026-09-26,Yes,Repair estimate from a licensed contractor and photos of the damage,We cannot continue until these documents are received.
+CLM-1003,+15550100003,Theft,Approved,2026-09-24,No,,Your claim is approved. Payment will be issued within 5 to 7 business days.
+CLM-1004,+15550100004,Roof damage,Denied,2026-09-20,No,,The claim was not covered under your policy. You may request a review by speaking with a representative.
+CLM-1006,+15550100006,Auto glass,Paid,2026-09-15,No,,Payment was issued on September 15th.

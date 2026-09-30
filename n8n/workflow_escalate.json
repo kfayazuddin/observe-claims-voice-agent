@@ -1,0 +1,46 @@
+{
+  "name": "Observe - Escalate To Representative",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "escalate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "d0",
+      "name": "Webhook Escalate",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "44444444-4444-4444-8444-444444444444"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst body = item.body || item;\nconst msg = body.message || {};\nconst call = (msg.toolCallList && msg.toolCallList[0]) || {};\n// Mock handoff: in production this would be a warm transfer (SIP/Twilio) or a callback ticket in a CRM.\nconst result = { status: 'handoff_requested', message: 'A claims representative has been notified and will call the customer back shortly.' };\nreturn [{ json: { response: { results: [{ toolCallId: call.id || 'manual-test', result: JSON.stringify(result) }] } } }];"
+      },
+      "id": "d1",
+      "name": "Build Handoff Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {}
+      },
+      "id": "d2",
+      "name": "Respond Escalate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Webhook Escalate": { "main": [[{ "node": "Build Handoff Response", "type": "main", "index": 0 }]] },
+    "Build Handoff Response": { "main": [[{ "node": "Respond Escalate", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,302 @@
+{
+  "name": "Observe - Customer Lookup and Claim Verify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lookup-customer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Webhook Lookup",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst body = item.body || item;\nconst msg = body.message || {};\nconst call = (msg.toolCallList && msg.toolCallList[0]) || (msg.toolCalls && msg.toolCalls[0]) || {};\nlet args = call.arguments || (call.function && call.function.arguments) || {};\nif (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n// Fallback so you can test with a plain {\"phone\": \"...\", \"zip_code\": \"...\"} body\nconst src = Object.keys(args).length ? args : body;\nreturn [{ json: {\n  toolCallId: call.id || 'manual-test',\n  phone: String(src.phone || ''),\n  zip: String(src.zip_code || '')\n} }];"
+      },
+      "id": "a1",
+      "name": "Parse Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Customers",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "a2",
+      "name": "Read Customers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { toolCallId, phone } = $('Parse Lookup').first().json;\nconst digits = s => String(s || '').replace(/\\D/g, '').slice(-10);\nconst rows = $input.all().map(i => i.json);\nlet result;\nif (rows.length === 0 || rows[0].error) {\n  result = { error: true, message: 'lookup_failed' };\n} else {\n  const want = digits(phone);\n  const row = want.length === 10 ? rows.find(r => digits(r.phone) === want) : null;\n  result = row ? { found: true, first_name: String(row.full_name).split(' ')[0] } : { found: false };\n}\nreturn [{ json: { response: { results: [{ toolCallId, result: JSON.stringify(result) }] } } }];"
+      },
+      "id": "a3",
+      "name": "Match Customer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {}
+      },
+      "id": "a4",
+      "name": "Respond Lookup",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "verify-claim",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Webhook Verify",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst body = item.body || item;\nconst msg = body.message || {};\nconst call = (msg.toolCallList && msg.toolCallList[0]) || (msg.toolCalls && msg.toolCalls[0]) || {};\nlet args = call.arguments || (call.function && call.function.arguments) || {};\nif (typeof args === 'string') { try { args = JSON.parse(args); } catch (e) { args = {}; } }\n// Fallback so you can test with a plain {\"phone\": \"...\", \"zip_code\": \"...\"} body\nconst src = Object.keys(args).length ? args : body;\nreturn [{ json: {\n  toolCallId: call.id || 'manual-test',\n  phone: String(src.phone || ''),\n  zip: String(src.zip_code || '')\n} }];"
+      },
+      "id": "b1",
+      "name": "Parse Verify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Customers",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "b2",
+      "name": "Read Customers 2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1oMOm1pmR_QSXxwWQ_QSWXIo3fpaBFEWQewnVC40VT98",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Claims",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "b3",
+      "name": "Read Claims",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        660,
+        300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const { toolCallId, phone, zip } = $('Parse Verify').first().json;\nconst digits = s => String(s || '').replace(/\\D/g, '').slice(-10);\nconst zipNorm = s => String(s || '').replace(/\\D/g, '').padStart(5, '0');\nconst customers = $('Read Customers 2').all().map(i => i.json);\nconst claims = $input.all().map(i => i.json);\nlet result;\nif (customers.length === 0 || customers[0].error) {\n  result = { error: true, message: 'lookup_failed' };\n} else {\n  const want = digits(phone);\n  const cust = want.length === 10 ? customers.find(r => digits(r.phone) === want) : null;\n  if (!cust || zipNorm(cust.zip_code) !== zipNorm(zip)) {\n    // Same answer for unknown phone and wrong ZIP: never reveal which one failed\n    result = { verified: false };\n  } else {\n    const claim = claims.find(c => digits(c.phone) === want);\n    if (!claim) {\n      result = { verified: true, full_name: cust.full_name, has_claim: false };\n    } else {\n      result = {\n        verified: true,\n        full_name: cust.full_name,\n        has_claim: true,\n        claim_id: claim.claim_id,\n        claim_type: claim.claim_type,\n        status: claim.status,\n        last_updated: claim.last_updated,\n        docs_required: String(claim.docs_required).toLowerCase() === 'yes',\n        docs_needed_description: claim.docs_needed_description || '',\n        adjuster_note: claim.adjuster_note || ''\n      };\n    }\n  }\n}\nreturn [{ json: { response: { results: [{ toolCallId, result: JSON.stringify(result) }] } } }];"
+      },
+      "id": "b4",
+      "name": "Verify and Build",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {}
+      },
+      "id": "b5",
+      "name": "Respond Verify",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Lookup": {
+      "main": [
+        [
+          {
+            "node": "Parse Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Lookup": {
+      "main": [
+        [
+          {
+            "node": "Read Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Customers": {
+      "main": [
+        [
+          {
+            "node": "Match Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Customer": {
+      "main": [
+        [
+          {
+            "node": "Respond Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Verify": {
+      "main": [
+        [
+          {
+            "node": "Parse Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Verify": {
+      "main": [
+        [
+          {
+            "node": "Read Customers 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Customers 2": {
+      "main": [
+        [
+          {
+            "node": "Read Claims",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Claims": {
+      "main": [
+        [
+          {
+            "node": "Verify and Build",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify and Build": {
+      "main": [
+        [
+          {
+            "node": "Respond Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
